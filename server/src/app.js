@@ -5,10 +5,17 @@ const app = express();
 
 // Middleware
 app.use(cors());
-app.use(express.json());
+app.use(express.json({
+  verify: (req, res, buf) => {
+    req.rawBody = buf;
+  }
+}));
 
 const productRoutes = require('./routes/productRoutes');
 app.use('/api/products', productRoutes);
+
+const webhookRoutes = require('./routes/webhookRoutes');
+app.use('/api/webhooks', webhookRoutes);
 
 // Health Check Route
 app.get('/api/health', (req, res) => {
