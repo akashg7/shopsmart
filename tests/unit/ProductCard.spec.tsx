@@ -15,5 +15,5 @@ test('should render product information correctly', async ({ mount }) => {
   
   await expect(component.locator('h3')).toContainText('Smartphone X');
   await expect(component.locator('.product-price')).toContainText('$999');
-  await expect(component.locator('.product-brand')).toContainText('TechBrand');
+  await expect(component.locator('.product-description')).toContainText('A great phone');
 });

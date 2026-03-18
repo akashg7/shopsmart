@@ -1,7 +1,14 @@
 import { test, expect } from '@playwright/experimental-ct-react';
 import ProductsPage from '../../client/src/pages/ProductsPage';
 
-test('should render page title and search bar', async ({ mount }) => {
+test('should render page title and search bar', async ({ page, mount }) => {
+  // Mock the API response so it stays in loading state or succeeds safely
+  await page.route('**/api/products**', async route => {
+    // delay response to ensure loading state is visible
+    await new Promise(resolve => setTimeout(resolve, 500));
+    await route.fulfill({ json: { products: [], total: 0 } });
+  });
+
   const component = await mount(<ProductsPage />);
   
   // Verify basic structure

@@ -17,8 +17,8 @@ export default defineConfig({
 
   projects: [
     {
-      name: 'unit',
-      testDir: './tests/unit',
+      name: 'integration',
+      testDir: './tests/integration',
       use: { ...devices['Desktop Chrome'] },
     },
     {
