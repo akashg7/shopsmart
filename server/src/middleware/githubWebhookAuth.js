@@ -2,7 +2,7 @@ const crypto = require('crypto');
 
 const githubWebhookAuth = (req, res, next) => {
     const signature = req.headers['x-hub-signature-256'];
-    const secret = process.env.GITHUB_WEBHOOK_SECRET;
+    const secret = process.env.WEBHOOK_SECRET;
 
     if (!signature) {
         return res.status(401).send('No signature found on request');

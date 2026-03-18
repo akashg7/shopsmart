@@ -30,7 +30,7 @@ The project follows a standard three-tier architecture:
 The ShopSmart backend includes a secure GitHub webhook receiver designed for `push` events.
 
 - **Endpoint**: `POST /api/webhooks/github`
-- **Security Check**: The backend validates the `X-Hub-Signature-256` HTTP header provided by GitHub. It computes an HMAC SHA256 hash using the pre-shared secret `GITHUB_WEBHOOK_SECRET` stored in the `.env` file and compares it to the incoming request payload in raw buffer format to prevent forgery.
+- **Security Check**: The backend validates the `X-Hub-Signature-256` HTTP header provided by GitHub. It computes an HMAC SHA256 hash using the pre-shared secret `WEBHOOK_SECRET` stored in the `.env` file and compares it to the incoming request payload in raw buffer format to prevent forgery.
 - **Logging**: Upon a successful validation of a `push` event, it securely logs the Repository name, Branch, Pusher name, and Commit message.
 
 ## Testing Pyramid

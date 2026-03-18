@@ -47,4 +47,4 @@ jobs:
         run: npm run test
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          GITHUB_WEBHOOK_SECRET: ${{ secrets.GITHUB_WEBHOOK_SECRET }}
+          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
