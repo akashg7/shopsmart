@@ -21,22 +21,40 @@ jobs:
           cache-dependency-path: |
             server/package-lock.json
             client/package-lock.json
+
+      # ── Backend ──
       - name: Install backend dependencies
         working-directory: server
         run: npm install
+
+      - name: Run backend linter
+        working-directory: server
+        run: npm run lint
+
+      - name: Run backend unit tests
+        working-directory: server
+        run: npm test
+        env:
+          MONGODB_URI: ${{ secrets.MONGODB_URI }}
 
       - name: Build backend (if present)
         working-directory: server
         run: npm run build --if-present
 
+      # ── Frontend ──
       - name: Install frontend dependencies
         working-directory: client
         run: npm install
+
+      - name: Run frontend linter
+        working-directory: client
+        run: npm run lint
 
       - name: Build frontend
         working-directory: client
         run: npm run build
 
+      # ── Playwright (Integration + E2E) ──
       - name: Install root dependencies
         run: npm install
 
@@ -47,4 +65,3 @@ jobs:
         run: npm run test
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          WEBHOOK_SECRET: ${{ secrets.WEBHOOK_SECRET }}
