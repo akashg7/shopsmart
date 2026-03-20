@@ -1,22 +1,23 @@
 # ShopSmart
 
-ShopSmart is a full-stack MERN e-commerce application extended with robust DevOps practices, including automated testing, CI/CD pipelines, and GitHub Webhooks.
+ShopSmart is a full-stack MERN e-commerce application extended with robust DevOps practices, including automated testing, CI/CD pipelines, linting, and automated dependency management.
 
 ## Architecture
 The project follows a standard three-tier architecture:
 - **Frontend (Client)**: A React application built with Vite (`/client`), handling the user interface for browsing products, searching, and pagination.
-- **Backend (Server)**: A Node.js and Express API (`/server`) that serves as the integration layer between the frontend and the database. It handles routing, middleware, business logic, and webhook processing.
+- **Backend (Server)**: A Node.js and Express API (`/server`) that serves as the integration layer between the frontend and the database. It handles routing, middleware, and business logic.
 - **Database**: MongoDB (via Mongoose) stores product data. Initial product data is seeded from dummyjson.
 
 ## Folder Structure
 - `server/`: Contains the backend logic.
-  - `controllers/`: Handles business logic for routes (e.g., fetching products, processing webhooks).
+  - `controllers/`: Handles business logic for routes (e.g., fetching products).
   - `routes/`: Defines API endpoints and maps them to controllers.
   - `models/`: Mongoose schemas (e.g., `Product`).
-  - `middleware/`: Custom Express middleware, specifically the GitHub Webhook Signature Verification (`githubWebhookAuth.js`).
+  - `tests/`: Jest-based backend unit tests.
 - `client/`: Contains the React/Vite frontend source code, components, and styling.
 - `tests/`: Contains the Playwright testing suites (Unit, Integration, E2E).
-- `.github/`: Contains CI/CD configuration files (GitHub Actions workflows).
+- `.github/`: Contains CI/CD configuration files (GitHub Actions workflows, Dependabot).
+- `scripts/`: Idempotent setup and deployment scripts.
 
 ## API Endpoints
 - `GET /api/products` - Fetch all products with pagination (`?page=1&limit=30`).
@@ -24,22 +25,81 @@ The project follows a standard three-tier architecture:
 - `GET /api/products/:id` - Fetch single product details.
 - `POST /api/products/add` - Add a new product.
 - `GET /api/health` - Basic health check endpoint.
-- `POST /api/webhooks/github` - Dedicated webhook route for GitHub events.
-
-## GitHub Webhooks Integration
-The ShopSmart backend includes a secure GitHub webhook receiver designed for `push` events.
-
-- **Endpoint**: `POST /api/webhooks/github`
-- **Security Check**: The backend validates the `X-Hub-Signature-256` HTTP header provided by GitHub. It computes an HMAC SHA256 hash using the pre-shared secret `WEBHOOK_SECRET` stored in the `.env` file and compares it to the incoming request payload in raw buffer format to prevent forgery.
-- **Logging**: Upon a successful validation of a `push` event, it securely logs the Repository name, Branch, Pusher name, and Commit message.
 
 ## Testing Pyramid
-We have implemented a testing pyramid using **Playwright**:
-1. **Unit Tests (`tests/unit/`)**: Uses `@playwright/experimental-ct-react` to test individual React UI components (like `ProductCard` and `ProductsPage`) in isolation to ensure fundamental rendering and component state logic.
+We have implemented a comprehensive testing pyramid:
+1. **Unit Tests**: 
+   - **Backend** (`server/tests/`): Jest + Supertest tests for API endpoints.
+   - **Frontend Components** (`tests/unit/`): Uses `@playwright/experimental-ct-react` to test individual React UI components (like `ProductCard` and `ProductsPage`) in isolation.
+   - **Frontend Vitest** (`client/src/App.test.jsx`): Vitest-based component rendering tests.
 2. **Integration Tests (`tests/integration/`)**: Evaluates the frontend interacting directly with the backend API to guarantee proper communication across system boundaries (e.g., fetching products, searching endpoints).
 3. **End-to-End Tests (`tests/e2e/`)**: Replicates full real user scenarios. The `searchFlow.spec.ts` test navigates the application imitating user activity, covering loading the page, searching, and seeing populated grid items.
 
 ## CI/CD Pipeline
-The Continuous Integration and Continuous Deployment pipeline runs securely via **GitHub Actions** (`.github/workflows/main.yml`) on every `push` and `pull_request` to verify the codebase's integrity before deployment.
-- **CI**: The pipeline provisions a Node environment, installs backend, frontend, and root-level testing dependencies, performs build checks for both the Vite client and Express server, installs Playwright browsers, and runs the entire Playwright Testing Pyramid (`npm run test`) to prevent regressions.
-- **CD**: Deployment is configured using Render (`render.yaml`). The backend deploys as a standalone Web Service and the frontend builds as a Static Site, which securely retrieves the backend URL via injected environment variables automatically.
+The Continuous Integration pipeline runs via **GitHub Actions** (`.github/workflows/main.yml`) on every `push` and `pull_request`.
+
+### CI Steps:
+1. **Install dependencies** — Backend, Frontend, and Root (Playwright).
+2. **Run backend linter** — ESLint checks on server code.
+3. **Run backend unit tests** — Jest test suite.
+4. **Build backend** — Verifies server compilation.
+5. **Run frontend linter** — ESLint checks on client code.
+6. **Build frontend** — Vite production build.
+7. **Install Playwright browsers** — Headless browser setup.
+8. **Run Playwright tests** — Integration + E2E test suites.
+
+### CD (Deployment):
+- **Render** (`render.yaml`): Backend as a Web Service, Frontend as a Static Site.
+- **EC2** (`.github/workflows/deploy.yml`): Automated deployment on push to `main` via SSH, using PM2 for process management.
+
+## Dependabot
+Automated dependency management via `.github/dependabot.yml`:
+- Checks npm packages weekly for `/`, `/client`, `/server`.
+- Checks GitHub Actions versions weekly.
+
+## Idempotent Scripts
+The `scripts/setup.sh` script is designed to be run multiple times safely:
+- Uses `mkdir -p` instead of `mkdir`.
+- Uses `npm install` (naturally idempotent).
+- Uses conditional checks before copying `.env` files.
+
+## Design Decisions
+- **Monorepo structure**: Client, Server, and Tests are co-located for easy development and CI.
+- **Playwright for full testing pyramid**: Playwright handles component tests, integration tests, and E2E tests — one tool, three testing layers.
+- **Jest + Supertest for backend**: Allows isolated API testing without a running MongoDB instance.
+- **Vite**: Chosen for fast build and hot-reload during frontend development.
+- **MongoDB + Mongoose**: Schema-driven NoSQL for flexible product data.
+
+## Challenges
+- **CI environment consistency**: Ensuring the CI pipeline matches local development (Node 18, MongoDB access, Playwright browser installation).
+- **Test isolation**: Backend Jest tests use Supertest on the Express `app` module without connecting to the database, keeping unit tests fast and independent.
+- **Monorepo dependency management**: Three separate `package.json` files (root, client, server) require careful `cache-dependency-path` configuration in GitHub Actions.
+
+## GitHub Secrets Required
+The following secrets must be configured in the GitHub repository settings:
+
+| Secret | Purpose |
+|--------|---------|
+| `MONGODB_URI` | MongoDB Atlas connection string for CI tests |
+| `EC2_HOST` | EC2 instance public IP or hostname (for deploy) |
+| `EC2_USER` | SSH username for EC2 (e.g., `ubuntu`) |
+| `EC2_SSH_KEY` | Private SSH key for EC2 access (for deploy) |
+
+## Getting Started
+
+```bash
+# Clone the repo
+git clone <repo-url>
+cd shopsmart
+
+# Run the idempotent setup script
+chmod +x scripts/setup.sh
+bash scripts/setup.sh
+
+# Start development servers
+cd server && npm run dev   # Backend on :5001
+cd client && npm run dev   # Frontend on :5173
+
+# Run all tests
+npm run test
+```
