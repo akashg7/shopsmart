@@ -1,0 +1,41 @@
+name: Deploy to EC2
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Deploy to EC2 via SSH
+        uses: appleboy/ssh-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            # Idempotent deployment script
+            cd ~/shopsmart || { echo "Project directory not found"; exit 1; }
+
+            echo "Pulling latest changes..."
+            git pull origin main
+
+            echo "Installing server dependencies..."
+            cd server && npm install
+
+            echo "Installing client dependencies..."
+            cd ../client && npm install && npm run build
+
+            echo "Restarting server with PM2..."
+            cd ../server
+            pm2 describe shopsmart-backend > /dev/null 2>&1
+            if [ $? -eq 0 ]; then
+              pm2 restart shopsmart-backend
+            else
+              pm2 start src/index.js --name shopsmart-backend
+            fi
+
+            echo "Deployment complete!"
