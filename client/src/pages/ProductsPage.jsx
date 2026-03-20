@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import ProductCard from '../components/ProductCard';
 
 const ProductsPage = () => {
@@ -10,7 +10,7 @@ const ProductsPage = () => {
     const [searchQuery, setSearchQuery] = useState('');
     const [limit] = useState(30);
 
-    const fetchProducts = async () => {
+    const fetchProducts = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -37,11 +37,11 @@ const ProductsPage = () => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [page, searchQuery, limit]);
 
     useEffect(() => {
         fetchProducts();
-    }, [page, searchQuery]);
+    }, [fetchProducts]);
 
     const handleSearch = (e) => {
         e.preventDefault();
