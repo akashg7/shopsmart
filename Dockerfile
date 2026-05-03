@@ -36,6 +36,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 RUN chown -R appuser:appgroup /app
 USER appuser
 
+ENV PORT=3000
 EXPOSE 3000
 
 # Healthcheck — verifies the /api/health endpoint responds
