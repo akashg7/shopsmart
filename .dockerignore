@@ -1,0 +1,15 @@
+node_modules
+.git
+.github
+.venv
+.DS_Store
+*.md
+playwright-report
+test-results
+playwright
+tests
+.env
+.prettierrc
+render.yaml
+docker-compose.yml
+*.pdf
