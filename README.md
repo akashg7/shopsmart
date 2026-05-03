@@ -36,21 +36,22 @@ We have implemented a comprehensive testing pyramid:
 3. **End-to-End Tests (`tests/e2e/`)**: Replicates full real user scenarios. The `searchFlow.spec.ts` test navigates the application imitating user activity, covering loading the page, searching, and seeing populated grid items.
 
 ## CI/CD Pipeline
-The Continuous Integration pipeline runs via **GitHub Actions** (`.github/workflows/main.yml`) on every `push` and `pull_request`.
+The Continuous Integration and Continuous Deployment pipeline runs via **GitHub Actions** (`.github/workflows/ci-cd.yml`) on every `push` and `pull_request` to `main`.
 
-### CI Steps:
-1. **Install dependencies** — Backend, Frontend, and Root (Playwright).
-2. **Run backend linter** — ESLint checks on server code.
-3. **Run backend unit tests** — Jest test suite.
-4. **Build backend** — Verifies server compilation.
-5. **Run frontend linter** — ESLint checks on client code.
-6. **Build frontend** — Vite production build.
-7. **Install Playwright browsers** — Headless browser setup.
-8. **Run Playwright tests** — Integration + E2E test suites.
-
-### CD (Deployment):
-- **Render** (`render.yaml`): Backend as a Web Service, Frontend as a Static Site.
-- **EC2** (`.github/workflows/deploy.yml`): Automated deployment on push to `main` via SSH, using PM2 for process management.
+### Pipeline Stages:
+1. **Test Phase:** 
+   - Installs all dependencies.
+   - Runs backend unit tests (Jest) generating JUnit test reports.
+   - Runs frontend integration and E2E tests (Playwright) generating test reports.
+2. **Provision Infrastructure (Terraform):** 
+   - Provisions an S3 bucket (versioned, encrypted, public access blocked) for Terraform state.
+   - Provisions an ECR repository.
+   - Provisions an ECS Fargate cluster, Task Definition, and Service.
+3. **Build & Push to ECR:** 
+   - Builds a multi-stage Docker image (Stage 1: build React frontend, Stage 2: serve via Express backend).
+   - Pushes the built image to AWS ECR.
+4. **Deploy to ECS Fargate:** 
+   - Triggers an ECS service update to deploy the new container image.
 
 ## Dependabot
 Automated dependency management via `.github/dependabot.yml`:
@@ -80,10 +81,11 @@ The following secrets must be configured in the GitHub repository settings:
 
 | Secret | Purpose |
 |--------|---------|
-| `MONGODB_URI` | MongoDB Atlas connection string for CI tests |
-| `EC2_HOST` | EC2 instance public IP or hostname (for deploy) |
-| `EC2_USER` | SSH username for EC2 (e.g., `ubuntu`) |
-| `EC2_SSH_KEY` | Private SSH key for EC2 access (for deploy) |
+| `MONGODB_URI` | MongoDB connection string |
+| `AWS_ACCESS_KEY_ID` | AWS API Access Key |
+| `AWS_SECRET_ACCESS_KEY` | AWS API Secret Key |
+| `AWS_SESSION_TOKEN` | AWS Lab Session Token |
+| `AWS_REGION` | AWS Region (default: us-east-1) |
 
 ## Getting Started
 

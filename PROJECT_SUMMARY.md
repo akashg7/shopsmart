@@ -35,26 +35,19 @@ A full-stack MERN e-commerce app where users can browse products, search by keyw
 
 ## CI/CD Pipelines (GitHub Actions)
 
-**CI (`main.yml`)** — Runs on every push/PR:
-1. Install deps (server, client, root)
-2. Lint backend + frontend (ESLint, zero warnings allowed)
-3. Run backend unit tests (Jest)
-4. Build frontend (Vite)
-5. Install Playwright browsers → run all Playwright tests
-
-**CD (`deploy.yml`)** — Runs on push to `main`:
-1. SSHs into AWS EC2 using GitHub Secrets
-2. Installs Node.js + PM2 if missing
-3. Clones/pulls the repo, installs deps, builds frontend
-4. Restarts backend with PM2
+**CI/CD Pipeline (`ci-cd.yml`)** — Runs on every push/PR to main:
+1. **Test Phase:** Installs dependencies, runs backend unit tests (with JUnit reports), and runs Playwright tests. Uploads reports as artifacts.
+2. **Terraform Phase:** Initializes, validates, plans, and applies infrastructure changes (S3, ECR, ECS Fargate cluster, and service).
+3. **Build & Push Phase:** Builds the multi-stage Docker image and pushes it to the Amazon ECR repository.
+4. **Deploy Phase:** Forces a new deployment of the ECS service to pull the latest image.
 
 ## Containerization
 - **Dockerfiles:** Separate for `client/` (node:18-alpine, port 5173) and `server/` (node:18-alpine, port 5001)
 - **Docker Compose:** Orchestrates both services with volume mounts for live reload
 
 ## Deployment
-- **Render.com** (`render.yaml`): Backend as web service, frontend as static site
-- **AWS EC2** (`deploy.yml`): Automated via SSH + PM2 process management
+- **AWS ECS Fargate:** Automated deployment via GitHub Actions. Container runs on AWS Fargate with a public IP on port 3000.
+- **Render.com** (`render.yaml`): Kept for optional alternative deployment.
 
 ## Code Quality
 - **ESLint:** Configured for both client (React rules) and server (Node rules), zero-warning policy in CI
@@ -92,5 +85,8 @@ docker-compose up --build   # Both services
 ## GitHub Secrets Required
 | Secret | Purpose |
 |--------|---------|
-| `MONGODB_URI` | MongoDB connection string for CI |
-| `EC2_HOST` / `EC2_USER` / `EC2_SSH_KEY` | EC2 deployment via SSH |
+| `MONGODB_URI` | MongoDB connection string |
+| `AWS_ACCESS_KEY_ID` | AWS API Access Key |
+| `AWS_SECRET_ACCESS_KEY` | AWS API Secret Key |
+| `AWS_SESSION_TOKEN` | AWS Lab Session Token |
+| `AWS_REGION` | AWS Region (default: us-east-1) |
