@@ -49,7 +49,7 @@ resource "aws_s3_bucket_public_access_block" "tf_state_public_access" {
 
 # 2. ECR Repository for Docker Image
 resource "aws_ecr_repository" "shopsmart_repo" {
-  name                 = "${var.app_name}-repo"
+  name                 = "${var.app_name}-repo-${random_string.suffix.result}"
   image_tag_mutability = "MUTABLE"
   force_delete         = true
 
@@ -60,7 +60,7 @@ resource "aws_ecr_repository" "shopsmart_repo" {
 
 # 3. ECS Fargate Cluster
 resource "aws_ecs_cluster" "main" {
-  name = "${var.app_name}-cluster"
+  name = "${var.app_name}-cluster-${random_string.suffix.result}"
 }
 
 # Networking
@@ -76,7 +76,7 @@ data "aws_subnets" "default" {
 }
 
 resource "aws_security_group" "ecs_tasks" {
-  name        = "${var.app_name}-ecs-tasks-sg"
+  name        = "${var.app_name}-sg-${random_string.suffix.result}"
   description = "Allow inbound access to ECS tasks on port ${var.container_port}"
   vpc_id      = data.aws_vpc.default.id
 
@@ -103,13 +103,13 @@ data "aws_iam_role" "lab_role" {
 
 # CloudWatch Logs
 resource "aws_cloudwatch_log_group" "ecs_logs" {
-  name              = "/ecs/${var.app_name}"
+  name              = "/ecs/${var.app_name}-${random_string.suffix.result}"
   retention_in_days = 1
 }
 
 # ECS Task Definition
 resource "aws_ecs_task_definition" "app" {
-  family                   = "${var.app_name}-task"
+  family                   = "${var.app_name}-task-${random_string.suffix.result}"
   network_mode             = "awsvpc"
   requires_compatibilities = ["FARGATE"]
   cpu                      = "256"
@@ -133,7 +133,7 @@ resource "aws_ecs_task_definition" "app" {
       logConfiguration = {
         logDriver = "awslogs"
         options = {
-          "awslogs-group"         = "/ecs/${var.app_name}"
+          "awslogs-group"         = "/ecs/${var.app_name}-${random_string.suffix.result}"
           "awslogs-region"        = var.aws_region
           "awslogs-stream-prefix" = "ecs"
         }
@@ -144,7 +144,7 @@ resource "aws_ecs_task_definition" "app" {
 
 # ECS Service
 resource "aws_ecs_service" "shopsmart_service" {
-  name            = "${var.app_name}-service"
+  name            = "${var.app_name}-service-${random_string.suffix.result}"
   cluster         = aws_ecs_cluster.main.id
   task_definition = aws_ecs_task_definition.app.arn
   desired_count   = 1
