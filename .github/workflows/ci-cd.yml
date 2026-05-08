@@ -40,7 +40,7 @@ jobs:
 
       - name: Upload Backend Test Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: backend-test-report
           path: server/junit.xml
@@ -53,7 +53,7 @@ jobs:
 
       - name: Upload Playwright Test Report
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: playwright-test-report
           path: test-results/
