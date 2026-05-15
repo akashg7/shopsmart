@@ -11,7 +11,7 @@
     "test:headed": "playwright test --headed"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "^1.42.0",
+    "@playwright/experimental-ct-react": "^1.60.0",
     "@playwright/test": "^1.42.0",
     "@types/react": "^18.2.0",
     "@types/react-dom": "^18.2.0",
